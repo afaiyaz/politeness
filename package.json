@@ -1,0 +1,25 @@
+{
+  "name": "politeness",
+  "version": "0.0.1",
+  "description": "slack integration for AWS comprehend",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/afaiyaz/politeness.git"
+  },
+  "keywords": [
+    "aws",
+    "comprehend",
+    "slack",
+    "lambdas"
+  ],
+  "author": "Atif Faiyaz, Nathan Thomas, Ziye Wang",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/afaiyaz/politeness/issues"
+  },
+  "homepage": "https://github.com/afaiyaz/politeness#readme"
+}
