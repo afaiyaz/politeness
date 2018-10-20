@@ -17,6 +17,9 @@ Resources:
           Properties:
             Path: /politeness-api
             Method: POST
+      Environment:
+        Variables:
+          CLIENT_ID: '461546631287.460699053317'
   politenessoauth:
     Type: 'AWS::Serverless::Function'
     Properties:
