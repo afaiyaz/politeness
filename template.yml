@@ -5,7 +5,7 @@ Resources:
   politenessapi:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: index.handler
+      Handler: handlePoliteness.handler
       Runtime: nodejs8.10
       CodeUri: ./
       Description: ''
@@ -17,3 +17,20 @@ Resources:
           Properties:
             Path: /politeness-api
             Method: POST
+  politenessoauth:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: handleOauth.handler
+      Runtime: nodejs8.10
+      CodeUri: .
+      Description: ''
+      MemorySize: 128
+      Timeout: 3
+      Role: 'arn:aws:iam::761270497423:role/service-role/myFirstLambdaServiceRole'
+      Events:
+        Api1:
+          Type: Api
+          Properties:
+            Path: /politeness-oauth
+            Method: GET
+
