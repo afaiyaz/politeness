@@ -4,7 +4,8 @@
   "description": "slack integration for AWS comprehend",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "zip": "zip -r ~/Downloads/politeness/politeness-api.zip ./*"
   },
   "repository": {
     "type": "git",
