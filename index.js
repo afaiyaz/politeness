@@ -1,8 +1,9 @@
 const evaluate = require('evaluate');
+const querystring = require('querystring');
 
 exports.handler = (event, context, callback) => {
-
-    const message = JSON.parse(event.body);
+    console.log(event.body);
+    const message = querystring.parse(event.body)
     evaluate(message.text, (result) => {
         const response = {
             statusCode: 200,
