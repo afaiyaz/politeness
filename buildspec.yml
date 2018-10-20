@@ -3,7 +3,7 @@ phases:
   install:
     commands:
       - npm install
-      - aws cloudformation package --template-file samTemplate.yaml --s3-bucket politeness-api --output-template-file outputSamTemplate.yml
+      - aws cloudformation package --template-file samTemplate.yml --s3-bucket politeness-api --output-template-file outputSamTemplate.yaml
 artifacts:
   type: zip
   files:
