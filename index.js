@@ -1,11 +1,62 @@
 const AWS = require('aws-sdk');
-// import individual service
-// import comprehendClient = require('aws-sdk/clients/comprehend');
+
+//Call aws comprehend API
+const evaluateMessage = (message) =>({
+    netrual:'20%',
+    positive:'10%',
+    negative:'70%'
+});
+
+
+const ziyeSlack = async (event) => {
+
+
+    const responseBody = getFormattedMessage();
+
+    const evalutaion = evaluateMessage();
+
+    const response = {
+        statusCode: 200,
+        body: JSON.stringify(responseBody)
+
+    };
+    return response;
+};
+
+//Formatting response message
+const getFormattedMessage = (message) =>({
+
+     text: `Your message "${message}" too negative, please review before send`,
+     attachments: [
+        {
+            text: "too negative",
+            fallback: "You are unable to choose a game",
+            callback_id: "wopr_game",
+            color: "#3AA3E3",
+            attachment_type: "default",
+            actions: [
+                {
+                    name: "game",
+                    text: "Do not send",
+                    style: "danger",
+                    type: "button",
+                    value: "war",
+                    confirm: {
+                        title: "Are you sure?",
+                        text: "This can really hurt feelings!",
+                        ok_text: "Yes",
+                        dismiss_text: "No"
+                    }
+                }
+            ]
+        }
+    ]
+});
+
 
 exports.handler = (event, context, callback) => {
 
-    var message = JSON.parse(event.body);
-    console.log(message);
+    const message = JSON.parse(event.body);
     var comprehend = new AWS.Comprehend({apiVersion: '2017-11-27'});
     var params = {
         Text: message.text,
@@ -13,7 +64,7 @@ exports.handler = (event, context, callback) => {
     };
 
     comprehend.detectSentiment(params, function(err, data) {
-      if (err) console.log(err, err.stack); // an error occurred
+      if (err) console.log(err, err.stack);
       else {
         console.log(data);
 
@@ -25,9 +76,4 @@ exports.handler = (event, context, callback) => {
     }
     });
 
-    // const response = {
-    //     statusCode: 200,
-    //     body: event.body
-    // };
-    // return response;
 };
