@@ -21,5 +21,8 @@
   "bugs": {
     "url": "https://github.com/afaiyaz/politeness/issues"
   },
-  "homepage": "https://github.com/afaiyaz/politeness#readme"
+  "homepage": "https://github.com/afaiyaz/politeness#readme",
+  "dependencies": {
+    "aws-sdk": "^2.339.0"
+  }
 }
