@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/afaiyaz/politeness#readme",
   "dependencies": {
-    "aws-sdk": "^2.339.0"
+    "aws-sdk": "^2.339.0",
+    "request": "^2.88.0"
   }
 }
