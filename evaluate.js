@@ -51,49 +51,61 @@ const fetchResults = async (message) => {
 
     var comprehend = new AWS.Comprehend({apiVersion: '2017-11-27'});
     var params = {
-        Text: message.text,
+        TextList: message.text.split('.').filter(i => i.length),
         LanguageCode: 'en'
     };
 
     return new Promise((resolve, reject) => {
-        comprehend.detectSentiment(params, function(err, data) {
+        comprehend.batchDetectSentiment(params, function(err, data) {
             if (err) reject(err);
-            else resolve({...message, ...data});
+            else {
+                console.log("******DATA*********", data.ResultList);
+                resolve({...message, sentimentResult: data.ResultList});
+            }
         });
-    })
+    });
 }
 
 const evaluateResults = (message) => {
-    console.log('*** evaluateResults ***', message);
-    if (!message.oauth) {
-        let client_id = process.env.CLIENT_ID;
-        let team = message.team_id;
-        response = {
-            ...message,
-            message: message.text,
-            send_message: false,
-            text: `It looks like you haven't agreed to use this app, please click here to continue: https://slack.com/oauth/authorize?client_id=${client_id}&scope=chat:write:user&team=${team}`,
-            color: '#0099FF',
-        };
-    } else if (message.SentimentScore.Negative >= 0.5) {
-        response = {
-            ...message,
-            message: message.text,
-            send_message: false,
-            text: 'Negative messages can hurt feelings, please reconsider',
-            color: '#FF0000',
-        };
-    } else {
-        response = {
-            ...message,
-            message: message.text,
-            send_message: true,
-            text: 'Good for you, keep it positive!',
-            color: '#3AA3E3',
-        };
-    }
+    console.log('*** evaluating message ***', JSON.stringify(message));
 
-    return response;
+    if (!message.oauth) {
+       let client_id = process.env.CLIENT_ID;
+       let team = message.team_id;
+       return {
+           ...message,
+           message: message.text,
+           send_message: false,
+           text: `It looks like you haven't agreed to use this app, please click here to continue: https://slack.com/oauth/authorize?client_id=${client_id}&scope=chat:write:user&team=${team}`,
+           color: '#0099FF',
+       };
+    }
+    const negativeResults = message
+      .sentimentResult
+      .map((elem, index) => ({
+        negativityScore: elem.SentimentScore.Negative,
+        text: message.text.split('.').filter(i => i.length)[index],
+      }))
+      .filter(obj => obj.negativityScore >= 0.5);
+
+    console.log("*****negativeResults****", negativeResults);
+    if (!negativeResults.length) {
+      return {
+        ...message,
+        message: message.text,
+        send_message: true,
+        text: 'Good for you, keep it positive!',
+        color: '#3AA3E3',
+      };
+    }
+    const negativeSentences = negativeResults.map(({text}) => text);
+    return {
+      ...message,
+      message: message.text,
+      send_message: false,
+      text: `We really think you can rephrase the following sentences. "${negativeSentences.join(', ')}"`,
+      color: '#FF0000',
+    };
 };
 
 const formatMessage = (message) => {
