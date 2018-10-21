@@ -31,7 +31,7 @@ const evaluate = (message, callback) => {
         if (!evaluatedResults.too_negative) {
             sendMessageAsUser(evaluatedResults);
             // callback({"success": "you did a thing"});
-            callback({});
+            callback(null);
         } else {
             callback(formatMessage(evaluatedResults));
         }
