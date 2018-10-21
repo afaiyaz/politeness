@@ -1,4 +1,5 @@
 const registerOauth = require('registerOauth');
+const registrationPage = require('./registrationPage');
 
 exports.handler = (event, context, callback) => {
     console.log(event.queryStringParameters);
@@ -6,7 +7,7 @@ exports.handler = (event, context, callback) => {
         const response = {
             statusCode: 200,
             headers: {"content-type": "text/html"},
-            body: '<p>Thank you for registering with our Application!<p>'
+            body: registrationPage,
         }
         callback(null, response);
     });
