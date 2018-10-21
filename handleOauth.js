@@ -6,7 +6,7 @@ exports.handler = (event, context, callback) => {
         const response = {
             statusCode: 200,
             headers: {"content-type": "text/html"},
-            body: '<p>Thank you for registering with our Application!<p>'
+            body: '<p>Thank you for registering with politeness!<p>'
         }
         callback(null, response);
     });

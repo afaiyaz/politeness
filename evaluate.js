@@ -65,12 +65,12 @@ const fetchResults = async (message) => {
 
     var comprehend = new AWS.Comprehend({apiVersion: '2017-11-27'});
     var params = {
-        Text: message.text,
+        TextList: message.text.split('.').filter(i => i.length),
         LanguageCode: 'en'
     };
 
     return new Promise((resolve, reject) => {
-        comprehend.detectSentiment(params, function(err, data) {
+        comprehend.batchDetectSentiment(params, function(err, data) {
             if (err) reject(err);
             else resolve({...message, ...data});
         });
@@ -79,26 +79,57 @@ const fetchResults = async (message) => {
 
 // result.SentimentScore.Negative >= 0.5
 const evaluateResults = (message, result) => {
-    let response;
-    if (result.SentimentScore.Negative >= 0.5) {
-        response = {
+    console.log('*** evaluating results ***', JSON.stringify(result));
+    const negativeResults = result
+      .ResultList
+      .map((elem, index) => ({
+        negativityScore: elem.SentimentScore.Negative,
+        text: message.text.split('.').filter(i => i.length)[index],
+      }))
+      .filter(obj => obj.negativityScore >= 0.5);
+    if (!negativeResults.length) {
+      return {
+        ...result,
+        message: message.text,
+        too_negative: false,
+        text: 'Good for you, keep it positive!',
+        color: '#3AA3E3',
+      };
+    }
+    const negativeSentences = negativeResults.map(({text}) => text);
+    return {
+      ...result,
+      message: message.text,
+      too_negative: true,
+      text: `We really think you can rephrase the following sentences. """${negativeSentences.join(', ')}"""`,
+      color: '#FF0000',
+    };
+
+
+    // if (result.SentimentScore.Negative >= 0.5) {
+    //     return {
+    //         ...result,
+    //         message: message.text,
+    //         too_negative: true,
+    //         text: 'Your message was too negative, please review before sending',
+    //         color: '#FF0000',
+    //     };
+    // } else {
+    //     return {
+    //         ...result,
+    //         message: message.text,
+    //         too_negative: false,
+    //         text: 'Good for you, keep it positive!',
+    //         color: '#3AA3E3',
+    //     };
+    // }
+    return {
             ...result,
             message: message.text,
             too_negative: true,
             text: 'Your message was too negative, please review before sending',
             color: '#FF0000',
         };
-    } else {
-        response = {
-            ...result,
-            message: message.text,
-            too_negative: false,
-            text: 'Good for you, keep it positive!',
-            color: '#3AA3E3',
-        };
-    }
-
-    return response;
 };
 
 const formatMessage = (result) => ({
