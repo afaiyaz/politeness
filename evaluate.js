@@ -2,15 +2,8 @@ const AWS = require('aws-sdk');
 const request = require('request');
 
 const evaluate = (message, callback) => {
-    getUserOauth(message)
-    .then((oauthResult) => {
-        console.log("*** Oauth Result ***", oauthResult);
-
-        return {
-            ...message,
-            oauth: ((oauthResult.Item || {}).access_token || {}).S
-        };
-    })
+    formatRequest(message)
+    .then(getUserOauth)
     .then(fetchResults)
     .then(evaluateResults)
     .then((evaluatedResults) => {
@@ -23,6 +16,29 @@ const evaluate = (message, callback) => {
         }
     });
 };
+
+const formatRequest = (message) => {
+    console.log("****formatRequest****", message)
+    return new Promise((resolve) => {
+        if (message.payload) {
+            let payload = JSON.parse(message.payload);
+            resolve({
+                text: payload.actions[0].value,
+                token: payload.token,
+                team_id: payload.team.id,
+                team_domain: payload.team.domain,
+                channel_id: payload.channel.id,
+                channel_name: payload.channel.name,
+                user_id: payload.user.id,
+                user_name: payload.user.name,
+                response_url: payload.response_url,
+                trigger_id: payload.trigger_id,
+            });
+        } else {
+            resolve(message);
+        }
+    });
+}
 
 const getUserOauth = async (message) => {
     var dynamodb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
@@ -41,7 +57,7 @@ const getUserOauth = async (message) => {
     return new Promise ((resolve, reject) => {
         dynamodb.getItem(params, function(err, data) {
             if (err) reject(err);
-            else resolve(data);
+            else resolve({...message, ...data});
         });
     });
 }
@@ -122,11 +138,11 @@ const formatMessage = (message) => {
                 attachment_type: "default",
                 actions: [
                     {
-                        name: "game",
+                        name: "send_anyway",
                         text: (message.oauth) ? "Send Anyway" : "Try again",
                         style: "danger",
                         type: "button",
-                        value: (message.oauth) ? "bad" : "try_again",
+                        value: message.message,
                     }
                 ]
             }
