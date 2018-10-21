@@ -72,26 +72,38 @@ const fetchResults = async (message) => {
     return new Promise((resolve, reject) => {
         comprehend.batchDetectSentiment(params, function(err, data) {
             if (err) reject(err);
-            else resolve({...message, ...data});
+            else resolve({...message, sentimentResult: data});
         });
-    })
+    });
 }
 
-// result.SentimentScore.Negative >= 0.5
-const evaluateResults = (message, result) => {
-    console.log('*** evaluating results ***', JSON.stringify(result));
+const evaluateResults = (message) => {
+    console.log('*** evaluating message ***', JSON.stringify(message));
+
+    if (!message.oauth) {
+       let client_id = process.env.CLIENT_ID;
+       let team = message.team_id;
+       return {
+           ...message,
+           message: message.text,
+           send_message: false,
+           text: `It looks like you haven't agreed to use this app, please click here to continue: https://slack.com/oauth/authorize?client_id=${client_id}&scope=chat:write:user&team=${team}`,
+           color: '#0099FF',
+       };
+    }
     const negativeResults = result
-      .ResultList
+      .sentimentResult
       .map((elem, index) => ({
         negativityScore: elem.SentimentScore.Negative,
         text: message.text.split('.').filter(i => i.length)[index],
       }))
       .filter(obj => obj.negativityScore >= 0.5);
+
     if (!negativeResults.length) {
       return {
         ...result,
         message: message.text,
-        too_negative: false,
+        send_message: true,
         text: 'Good for you, keep it positive!',
         color: '#3AA3E3',
       };
@@ -100,36 +112,10 @@ const evaluateResults = (message, result) => {
     return {
       ...result,
       message: message.text,
-      too_negative: true,
+      send_message: false,
       text: `We really think you can rephrase the following sentences. """${negativeSentences.join(', ')}"""`,
       color: '#FF0000',
     };
-
-
-    // if (result.SentimentScore.Negative >= 0.5) {
-    //     return {
-    //         ...result,
-    //         message: message.text,
-    //         too_negative: true,
-    //         text: 'Your message was too negative, please review before sending',
-    //         color: '#FF0000',
-    //     };
-    // } else {
-    //     return {
-    //         ...result,
-    //         message: message.text,
-    //         too_negative: false,
-    //         text: 'Good for you, keep it positive!',
-    //         color: '#3AA3E3',
-    //     };
-    // }
-    return {
-            ...result,
-            message: message.text,
-            too_negative: true,
-            text: 'Your message was too negative, please review before sending',
-            color: '#FF0000',
-        };
 };
 
 const formatMessage = (result) => ({
