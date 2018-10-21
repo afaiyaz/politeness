@@ -80,7 +80,7 @@ const evaluateResults = (message) => {
             ...message,
             message: message.text,
             send_message: false,
-            text: 'Your message was too negative, please review before sending',
+            text: 'Negative messages can hurt feelings, please reconsider',
             color: '#FF0000',
         };
     } else {
@@ -123,7 +123,7 @@ const formatMessage = (message) => {
 
     if (message.oauth) {
         response.attachments[0].actions[0].confirm = {
-                title: "Negative messages may hurt feelings, are you sure you want to send this?",
+                title: "Are you sure?",
                 text: message.message,
                 ok_text: "Yes",
                 dismiss_text: "No"
