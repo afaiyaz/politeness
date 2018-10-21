@@ -33,6 +33,7 @@ const formatRequest = (message) => {
                 user_name: payload.user.name,
                 response_url: payload.response_url,
                 trigger_id: payload.trigger_id,
+                send_anyway: message.send_anyway,
             });
         } else {
             resolve(message);
@@ -41,6 +42,7 @@ const formatRequest = (message) => {
 }
 
 const getUserOauth = async (message) => {
+    console.log("***getUserOauth***", message);
     var dynamodb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 
     var params = {
@@ -57,7 +59,14 @@ const getUserOauth = async (message) => {
     return new Promise ((resolve, reject) => {
         dynamodb.getItem(params, function(err, data) {
             if (err) reject(err);
-            else resolve({...message, ...data});
+            else {
+                console.log("****OAUTH DATA****", data);
+                let oauth;
+                if (data.Item && data.Item.access_token && data.Item.access_token.S) {
+                    oauth = data.Item.access_token.S;
+                }
+                resolve({...message, oauth})
+            };
         });
     });
 }
@@ -118,7 +127,7 @@ const evaluateResults = (message) => {
     return {
       ...message,
       message: message.text,
-      send_message: false,
+      send_message: (message.send_anyway === 'true') ? true : false,
       text: `We really think you can rephrase the following sentences. "${negativeSentences.join(', ')}"`,
       color: '#FF0000',
     };

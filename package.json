@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "zip": "zip -r ~/Downloads/politeness/politeness-api.zip ./*"
+    "zip": "zip -r ~/Downloads/politeness/politeness-api.zip ./*",
+    "start": "sam local start-api"
   },
   "repository": {
     "type": "git",
