@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-
+const request = require('request');
 
 const evaluate = (message, callback) => {
     getUserOauth(message)
@@ -25,9 +25,16 @@ const evaluate = (message, callback) => {
         };
     })
     .then(fetchResults)
-    .then((result) => {
-        console.log(result);
-        callback(evaluateResults(message, result));
+    .then((fetchedResults) => evaluateResults(message, fetchedResults))
+    .then((evaluatedResults) => {
+        console.log('evaluatedResults: ', evaluatedResults);
+        if (!evaluatedResults.too_negative) {
+            sendMessageAsUser(evaluatedResults);
+            // callback({"success": "you did a thing"});
+            callback(null);
+        } else {
+            callback(formatMessage(evaluatedResults));
+        }
     });
 };
 
@@ -63,43 +70,35 @@ const fetchResults = async (message) => {
     };
 
     return new Promise((resolve, reject) => {
-        // resolve(positiveData);
         comprehend.detectSentiment(params, function(err, data) {
             if (err) reject(err);
-            else resolve(data);
+            else resolve({...message, ...data});
         });
     })
 }
 
+// result.SentimentScore.Negative >= 0.5
 const evaluateResults = (message, result) => {
-    let response = {...result};
-    if (!result.SentimentScore) {
+    let response;
+    if (result.SentimentScore.Negative >= 0.5) {
         response = {
             ...result,
-            message: message,
-            too_negative: false,
-            text: 'We could not find a result for you, please try again',
-            color: '#FFFF00',
-        };
-    } else if (result.SentimentScore.Negative >= 0.75) {
-        response = {
-            ...result,
-            message: message,
+            message: message.text,
             too_negative: true,
-            text: 'Your message was too negative, please review before send',
+            text: 'Your message was too negative, please review before sending',
             color: '#FF0000',
         };
     } else {
         response = {
             ...result,
-            message: message,
+            message: message.text,
             too_negative: false,
             text: 'Good for you, keep it positive!',
             color: '#3AA3E3',
         };
     }
 
-    return formatMessage(response);
+    return response;
 };
 
 const formatMessage = (result) => ({
@@ -129,5 +128,15 @@ const formatMessage = (result) => ({
         }
     ]
 });
+
+const sendMessageAsUser = (results) => {
+    request.post('https://slack.com/api/chat.postMessage', {
+        form: {
+            token: results.oauth,
+            channel: results.channel_id,
+            text: results.message,
+        }
+    });
+}
 
 module.exports = evaluate;
