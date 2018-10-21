@@ -77,7 +77,6 @@ const fetchResults = async (message) => {
     })
 }
 
-// result.SentimentScore.Negative >= 0.5
 const evaluateResults = (message, result) => {
     let response;
     if (result.SentimentScore.Negative >= 0.5) {
@@ -106,19 +105,19 @@ const formatMessage = (result) => ({
     attachments: [
         {
             text: result.message,
-            fallback: "You are unable to choose a game",
+            fallback: "Something went wrong",
             callback_id: "wopr_game",
             color: result.color,
             attachment_type: "default",
             actions: [
                 {
                     name: "game",
-                    text: "Do not send",
+                    text: "Send Anyway",
                     style: "danger",
                     type: "button",
                     value: "war",
                     confirm: {
-                        title: "Are you sure you want to send this?",
+                        title: "Negative messages may hurt feelings, are you sure you want to send this?",
                         text: result.message,
                         ok_text: "Yes",
                         dismiss_text: "No"

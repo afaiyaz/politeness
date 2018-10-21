@@ -6,13 +6,9 @@ exports.handler = (event, context, callback) => {
     const message = querystring.parse(event.body)
     evaluate(message, (result) => {
         let response = {
-            statusCode: 200
+            statusCode: 200,
+            body: (result) ? JSON.stringify(result) : ""
         };
-
-        if (result) {
-            response.body = JSON.stringify(result);
-        }
-        // context.succeed(response);
 
         callback(null, response);
     });
