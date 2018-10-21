@@ -6,31 +6,17 @@ const evaluate = (message, callback) => {
     .then((oauthResult) => {
         console.log("*** Oauth Result ***", oauthResult);
 
-        const oauth = ((oauthResult.Item || {}).access_token || {}).S;
-        if (!oauth) {
-            let client_id = process.env.CLIENT_ID;
-            let team = message.team_id;
-            let response = {
-                text: `It looks like you haven't agreed to use this app, please click here to continue: https://slack.com/oauth/authorize?client_id=${client_id}&scope=chat:write:user&team=${team}`
-            }
-
-            console.log('Rejecting user for no oauth token', response);
-            callback(response);
-            throw new Error('No oauth token for user');
-        }
-
         return {
             ...message,
-            oauth
+            oauth: ((oauthResult.Item || {}).access_token || {}).S
         };
     })
     .then(fetchResults)
-    .then((fetchedResults) => evaluateResults(message, fetchedResults))
+    .then(evaluateResults)
     .then((evaluatedResults) => {
         console.log('evaluatedResults: ', evaluatedResults);
-        if (!evaluatedResults.too_negative) {
+        if (evaluatedResults.send_message) {
             sendMessageAsUser(evaluatedResults);
-            // callback({"success": "you did a thing"});
             callback(null);
         } else {
             callback(formatMessage(evaluatedResults));
@@ -77,21 +63,31 @@ const fetchResults = async (message) => {
     })
 }
 
-const evaluateResults = (message, result) => {
-    let response;
-    if (result.SentimentScore.Negative >= 0.5) {
+const evaluateResults = (message) => {
+    console.log('*** evaluateResults ***', message);
+    if (!message.oauth) {
+        let client_id = process.env.CLIENT_ID;
+        let team = message.team_id;
         response = {
-            ...result,
+            ...message,
             message: message.text,
-            too_negative: true,
+            send_message: false,
+            text: `It looks like you haven't agreed to use this app, please click here to continue: https://slack.com/oauth/authorize?client_id=${client_id}&scope=chat:write:user&team=${team}`,
+            color: '#0099FF',
+        };
+    } else if (message.SentimentScore.Negative >= 0.5) {
+        response = {
+            ...message,
+            message: message.text,
+            send_message: false,
             text: 'Your message was too negative, please review before sending',
             color: '#FF0000',
         };
     } else {
         response = {
-            ...result,
+            ...message,
             message: message.text,
-            too_negative: false,
+            send_message: true,
             text: 'Good for you, keep it positive!',
             color: '#3AA3E3',
         };
@@ -100,33 +96,42 @@ const evaluateResults = (message, result) => {
     return response;
 };
 
-const formatMessage = (result) => ({
-    text: result.text,
-    attachments: [
-        {
-            text: result.message,
-            fallback: "Something went wrong",
-            callback_id: "wopr_game",
-            color: result.color,
-            attachment_type: "default",
-            actions: [
-                {
-                    name: "game",
-                    text: "Send Anyway",
-                    style: "danger",
-                    type: "button",
-                    value: "war",
-                    confirm: {
-                        title: "Negative messages may hurt feelings, are you sure you want to send this?",
-                        text: result.message,
-                        ok_text: "Yes",
-                        dismiss_text: "No"
+const formatMessage = (message) => {
+    console.log('*** formatMessage ***', message);
+
+    let response = {
+        text: message.text,
+        attachments: [
+            {
+                text: message.message,
+                fallback: "Something went wrong",
+                callback_id: "wopr_game",
+                color: message.color,
+                attachment_type: "default",
+                actions: [
+                    {
+                        name: "game",
+                        text: (message.oauth) ? "Send Anyway" : "Try again",
+                        style: "danger",
+                        type: "button",
+                        value: (message.oauth) ? "bad" : "try_again",
                     }
-                }
-            ]
-        }
-    ]
-});
+                ]
+            }
+        ]
+    };
+
+    if (message.oauth) {
+        response.attachments[0].actions[0].confirm = {
+                title: "Negative messages may hurt feelings, are you sure you want to send this?",
+                text: message.message,
+                ok_text: "Yes",
+                dismiss_text: "No"
+            };
+    }
+
+    return response;
+};
 
 const sendMessageAsUser = (results) => {
     request.post('https://slack.com/api/chat.postMessage', {
